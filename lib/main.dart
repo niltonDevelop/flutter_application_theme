@@ -1,4 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_theme/app_color_scheme.dart';
+import 'package:flutter_application_theme/provider.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -7,14 +11,28 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     final isDark = ValueNotifier<bool>(false);
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
-      home: HomePage(isDark: isDark),
+    return MultiProvider(
+      providers: [ChangeNotifierProvider<ThemeProvider>(create: (context) => ThemeProvider())],
+      child: Consumer(
+        builder: (_, ThemeProvider themeProvider, __) {
+          final isDarkTheme = themeProvider.themeMode == ThemeMode.dark;
+          return AppColorScheme(
+            brightness: isDarkTheme ? Brightness.dark : Brightness.light,
+            platform: defaultTargetPlatform,
+            child: MaterialApp(
+              debugShowCheckedModeBanner: false,
+              title: 'Flutter Demo',
+              home: HomePage(isDark: isDark),
+              theme: ThemeData.light(),
+              darkTheme: ThemeData.dark(),
+              themeMode: themeProvider.themeMode,
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -25,12 +43,13 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: context.color.avatar,
       body: Center(
         child: SizedBox(
-          width: MediaQuery.sizeOf(context).width * 0.9,
+          width: MediaQuery.sizeOf(context).width * 0.85,
           height: MediaQuery.sizeOf(context).height * 0.6,
           child: Card(
-            color: Colors.grey.shade400,
+            color: context.color.card,
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: Column(
@@ -42,7 +61,7 @@ class HomePage extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.blue, width: 5),
+                      border: Border.all(color: context.color.avatar, width: 5),
                     ),
                     child: ClipOval(
                       child: Image.asset(
@@ -60,10 +79,6 @@ class HomePage extends StatelessWidget {
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [const Text('Empresa:'), const Text('SAP')],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [const Text('correo:'), const Text('niltongr@outlook.com')],
                   ),
                   Row(
@@ -77,6 +92,7 @@ class HomePage extends StatelessWidget {
                             value: isDarkMode,
                             onChanged: (value) {
                               isDark.value = value;
+                              context.read<ThemeProvider>().toggleTheme(value);
                             },
                           );
                         },
